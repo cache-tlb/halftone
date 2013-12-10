@@ -1,0 +1,11 @@
+The simple implementation of Structure-Aware Halftone.
+
+Page: http://www.cse.cuhk.edu.hk/~ttwong/papers/structurehalftone/structurehalftone.html
+
+I modified the methods.
+
+1. the origin algorithm init the halftone image using random distribution of black and white points; I init it using [Ostromoukhov 2001].
+
+2. The origin method random swap any arbitrary pair of black and white pixels in the image; while I swap the black and white pixels within a small k by k blocks and run for all the blocks.
+
+3. They use an anneal-like algorothm, I think a single pass is enough, for that the time consumption is very large.
