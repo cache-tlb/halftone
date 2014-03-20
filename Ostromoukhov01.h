@@ -2,9 +2,8 @@
 
 #include <cv.h>
 
+// input type: 32fc1, output type: 8uc1
 IplImage *OstromoukhovHalftone(IplImage *I);
 
-template <typename T>
-T clamp(const T& value, const T& low, const T& high) {
-	return value < low ? low : (value > high ? high : value);
-}
+cv::Mat OstromoukhovHalftone(cv::Mat I);
+

@@ -154,10 +154,16 @@ double d01(int i) {
 	return d(i,2);
 }
 
-double round(double d)
+inline double round(double d)
 {
 	return floor(d + 0.5);
 }
+
+template <typename T>
+T clamp(const T& value, const T& low, const T& high) {
+	return value < low ? low : (value > high ? high : value);
+}
+
 
 IplImage *OstromoukhovHalftone(IplImage *I) {
 	vector<double> vd; vd.reserve(I->width * I->height);
@@ -171,10 +177,10 @@ IplImage *OstromoukhovHalftone(IplImage *I) {
 	double thres = vd[idx];
 	//printf("%lf %lf\n", thres, avgLum);
 	IplImage *temp = cvCloneImage(I);
-	IplImage *res = cvCloneImage(I);
+	IplImage *res = cvCreateImage(cvSize(I->width, I->height), 64, 1);
 	cvZero(res);
-	for (int i = 0; i < I->height - 1; i++) {
-		for (int j = 1; j < I->width - 1; j++) {
+	for (int i = 0; i < I->height; i++) {
+		for (int j = 0; j < I->width; j++) {
 			double error = 0.;
 			double val = cvGet2D(temp,i,j).val[0];
 			//val = clamp(val, 0., 1.);
@@ -188,12 +194,61 @@ IplImage *OstromoukhovHalftone(IplImage *I) {
 			}
 			int level = round(val*255.0);
 			level = clamp(level, 0, 255);
-			(CV_IMAGE_ELEM(temp, double, i, j + 1)) += error *d10(level);
-			(CV_IMAGE_ELEM(temp, double, i + 1, j - 1)) += error *d_11(level);
-			(CV_IMAGE_ELEM(temp, double, i + 1, j)) += error *d01(level);
+            if (j + 1 < I->width)
+			    (CV_IMAGE_ELEM(temp, double, i, j + 1)) += error *d10(level);
+            if (i + 1 < I->height && j - 1 >= 0)
+			    (CV_IMAGE_ELEM(temp, double, i + 1, j - 1)) += error *d_11(level);
+            if (i + 1 < I->height)
+			    (CV_IMAGE_ELEM(temp, double, i + 1, j)) += error *d01(level);
 		}
 	}
 	//printf("%lf", cvAvg(res).val[0]);
 	cvReleaseImage(&temp);
 	return res;
 }
+
+cv::Mat OstromoukhovHalftone(cv::Mat I) {
+    CV_Assert(I.type() == CV_64FC1);
+    int nPix = I.rows * I .cols;
+    vector<double> vd; vd.reserve(nPix);
+    for (int i = 0; i < I.rows; i++) {
+        for (int j = 0; j < I.cols; j++) {
+            vd.push_back(I.at<double>(i,j));
+        }
+    }
+    sort(vd.begin(), vd.end());
+    reverse(vd.begin(), vd.end());
+    double avgLum = cv::mean(I)[0];
+    int idx = round(avgLum * nPix);
+    double thres = vd[idx];
+    //printf("%lf %lf\n", thres, avgLum);
+    cv::Mat temp = I.clone();
+    cv::Mat res(I.rows, I.cols, CV_64FC1);
+    res.setTo(0);
+    for (int i = 0; i < I.rows; i++) {
+        for (int j = 0; j < I.cols; j++) {
+            double error = 0.;
+            double val = temp.at<double>(i,j);
+            //val = clamp(val, 0., 1.);
+            if (val > avgLum) {
+                res.at<uchar>(i,j) = 1;
+                error = val - 1.;
+            }
+            else {
+                res.at<uchar>(i,j) = 0;
+                error = val;
+            }
+            int level = round(val*255.0);
+            level = clamp(level, 0, 255);
+            if (j + 1 < I.cols)
+                temp.at<double>(i,j + 1) += error *d10(level);
+            if (i + 1 < I.rows && j - 1 >= 0)
+                temp.at<double>(i + 1,j - 1) +=  error *d_11(level);
+            if (i + 1 < I.rows)
+                temp.at<double>(i + 1, j) += error *d01(level);
+        }
+    }
+    //printf("%lf", cvAvg(res).val[0]);
+    return res;
+}
+
