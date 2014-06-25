@@ -14,21 +14,25 @@ SAHer::SAHer(cv::Mat &im8uc1) {
 }
 
 float SAHer::Objective(const cv::Rect &roi) {
-    float wg = .8, wt = 1 - wg;
+    float wg = .98, wt = 1 - wg;
     int blur_range = 11;
-    cv::Point lu(std::max(0, roi.x - blur_range), std::max(0, roi.y - blur_range)), rd(std::min(w_, roi.x + roi.width + blur_range), std::min(h_, roi.y + roi.height + blur_range));
+    cv::Point lu(std::max(0, roi.x - 2*blur_range), std::max(0, roi.y - 2*blur_range)), rd(std::min(w_, roi.x + roi.width + 2*blur_range), std::min(h_, roi.y + roi.height + 2*blur_range));
     cv::Point offset1(blur_range, blur_range);
 
     if ( roi.x - blur_range < 0) {
-        offset1.x = roi.x;
+        offset1.x = 0;
+    } else if (roi.x - blur_range*2 < 0) {
+        offset1.x = roi.x - blur_range;
     }
     if ( roi.y - blur_range < 0) {
-        offset1.y = roi.y;
+        offset1.y = 0;
+    } else if (roi.y - blur_range*2 < 0) {
+        offset1.y = roi.y - blur_range;
     }
     cv::Rect new_roi(lu, rd);
     cv::Mat src_roi = src_image_(new_roi), halftone_roi = halftone_image_(new_roi);
 
-    cv::Rect sub_roi = cv::Rect(offset1.x, offset1.y, roi.width, roi.height);
+    cv::Rect sub_roi = cv::Rect(offset1.x, offset1.y, std::min(roi.width + 2*blur_range, new_roi.width - offset1.x), std::min(roi.height + 2*blur_range, new_roi.height - offset1.y));
     //info() << "begin" << roi.x << roi.y << roi.width << roi.height << offset1.x << offset1.y << new_roi.x << new_roi.y << new_roi.width << new_roi.height;
     cv::Mat ssim_map = ssim(src_roi, halftone_roi)(sub_roi);
     //info () << "end";
@@ -96,7 +100,7 @@ void SAHer::ComputeSAH(const cv::Mat &sal) {
 
         }
         temperature *= AnnealFactor;
-    } while (temperature > 0.2f);
+    } while (temperature > 0.15f);
 
 
     return;
