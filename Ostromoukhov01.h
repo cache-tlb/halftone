@@ -7,3 +7,4 @@ IplImage *OstromoukhovHalftone(IplImage *I);
 
 cv::Mat OstromoukhovHalftone(cv::Mat I);
 
+
