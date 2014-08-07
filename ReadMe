@@ -8,4 +8,4 @@ I modified the method.
 
 2. The origin method randomly swaps an arbitrary pair of black and white pixels in the image; while I swap the black and white pixels within a small k by k block and run for all the blocks.
 
-3. They use an anneal-like algorothm, I think a single pass is enough, for that the time consumption is very large.
+3. They use an anneal-like algorothm, I think a single pass is enough, for that the time consumption is very expensive.
